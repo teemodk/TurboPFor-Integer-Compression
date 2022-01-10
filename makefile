@@ -64,7 +64,7 @@ endif
 CFLAGS+=-w -Wall $(DEBUG) $(OPT) 
 
 ifeq ($(OS),$(filter $(OS),Linux GNU/kFreeBSD GNU OpenBSD FreeBSD DragonFly NetBSD MSYS_NT Haiku))
-LDFLAGS+=-lrt -lm
+LDFLAGS+=-lm
 endif
 
 # compiler supports float16
