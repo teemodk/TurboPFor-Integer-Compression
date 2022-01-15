@@ -10,9 +10,10 @@
 
 CC ?= gcc
 CXX ?= g++
+AR ?= ar
+CL ?= $(CC)
 
 #CC=powerpc64le-linux-gnu-gcc
-CL = $(CC)
 #DEBUG=-DDEBUG -g
 
 PREFIX ?= /usr/local
@@ -46,16 +47,17 @@ ifeq ($(ARCH),ppc64le)
   SSE=-D__SSSE3__
   CFLAGS=-mcpu=power9 -mtune=power9 $(SSE)
 else ifeq ($(ARCH),aarch64)
-  CFLAGS=-march=armv8-a 
+  CFLAGS=-march=armv8-a -fPIC
+  LDFLAGS += -lm -fPIC
 ifneq (,$(findstring clang, $(CC)))
-  OPT+=-fomit-frame-pointer 
+  OPT+=-fomit-frame-pointer -fPIC
 #-fmacro-backtrace-limit=0
 endif
   SSE=-march=armv8-a
 else ifeq ($(ARCH),$(filter $(ARCH),x86_64))
 # set minimum arch sandy bridge SSE4.1 + AVX
-  SSE=-march=corei7-avx -mtune=corei7-avx 
-# SSE+=-mno-avx -mno-aes
+#   SSE=-march=corei7-avx -mtune=corei7-avx 
+SSE+=-mno-avx -mno-aes
   CFLAGS=$(SSE)
   AVX2=-march=haswell
 #  SSE=$(AVX2)
@@ -75,7 +77,7 @@ ifeq ($(STATIC),1)
 LDFLAGS+=-static
 endif
 
-all: icapp 
+all: libic.a 
 
 vp4c_sse.o: vp4c.c
 	$(CC) -O3 -w $(SSE) -DSSE2_ON $(OPT) -c vp4c.c -o vp4c_sse.o
@@ -113,15 +115,15 @@ LIB=bitpack.o bitpack_sse.o bitunpack.o bitunpack_sse.o \
     vp4c.o vp4c_sse.o vp4d.o vp4d_sse.o \
 	bitutil.o fp.o v8.o vint.o transpose.o transpose_sse.o trlec.o trled.o vsimple.o eliasfano.o
 #bic.o 	
-ifeq ($(ARCH),x86_64)
-LIB+=bitpack_avx2.o bitunpack_avx2.o vp4c_avx2.o vp4d_avx2.o transpose_avx2.o
-endif
+# ifeq ($(ARCH),x86_64)
+# LIB+=bitpack_avx2.o bitunpack_avx2.o vp4c_avx2.o vp4d_avx2.o transpose_avx2.o
+# endif
 
 libic.a: $(LIB)
-	ar cr $@ $+
+	${AR} cr $@ $+
 
-icapp: icapp.o libic.a $(OB)
-	$(CL) $^ $(LDFLAGS) -o icapp
+# icapp: icapp.o libic.a $(OB)
+# 	$(CL) $^ $(LDFLAGS) -o icapp
 
 myapp: myapp.o libic.a
 	$(CC) $^ $(LDFLAGS) -o myapp
